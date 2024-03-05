@@ -1,0 +1,114 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Packaging files:
+*.egg*
+*.lock
+*.tmp
+# Sphinx docs:
+build
+
+# SQLite3 database files:
+*.db
+*.sqlite3
+*.sqlite
+
+# Logs:
+# *.log
+*.prof
+*-log-*.txt
+
+# Environment variables
+.env
+
+# Django
+*.mo
+*.pot
+
+# Eclipse
+.project
+.pydevproject
+.settings
+
+# Linux Editors
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+.elc
+auto-save-list
+tramp
+.\#*
+*.swp
+*.swo
+
+# Rope
+.ropeproject
+
+# Mac
+.DS_Store
+._*
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+#virtualenv
+bin
+lib
+local
+include
+
+# Project settings
+./site/
+/src/media/*
+/env/
+/nbproject/
+.buildpath
+.project
+/.settings/
+/.idea
+*node_modules*
+package-lock.json
+/.run/
+# *.sh
+/src/test.py
+/src/script.py
+/src/script/*
+../.env
+pyvenv.cfg
+/src/docs
+/src/coverage
+/src/tdd
+.coverage
+*coverage.*
+*junit*
+.isort.cfg
+!poetry.lock
+
+#visualcode
+.vscode
+.python-version
+/.mypy_cache/
+
+# unitest
+/src/output.json
+/src/pytest_html_report.html
+/src/archive/*
+/src/gunicorn_conf.py
+/src/gunicorn_settings.py
+/src/gunicorn.conf.py
+/src/gunicorn_v2.conf.py
+/.pytest_cache/
+/venv310/
+
+mysql
+mysqldump
+
+/*.ipynb
