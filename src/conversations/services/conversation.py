@@ -66,6 +66,7 @@ class ConversationService(BaseService):
     def view_channel(cls, team_id: str, channel_id: str, **kwargs):
         limit = kwargs.pop("limit", None)
 
+        # TODO: filter channels that the user belong to
         query = Q(team_id=team_id, id=channel_id) | Q(team_id=team_id, is_general=True)
         channel = Channel.objects.filter(query).first()
         channels = [channel]  # TODO
