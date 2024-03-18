@@ -8,6 +8,8 @@ from django.db import transaction
 from core.utils import utils
 from conversations.utils import encode_cursor, decode_cursor
 from django.db.models import Q
+from core.queues.registry import ConversationQueue
+from messages.serializers import MessageSerializer
 
 
 class ConversationService(BaseService):
@@ -32,7 +34,7 @@ class ConversationService(BaseService):
         return channel_qs.first()
 
     @classmethod
-    def get_history(cls, team_id, channel_id: str, **kwargs):
+    def get_history(cls, team_id, channel_id: str, **kwargs) -> tuple:
         channel = Channel.objects.get(id=channel_id, team_id=team_id)
         inclusive = kwargs.get("inclusive", False)
         limit = utils.safe_int(kwargs.get("limit"), default=100, max_=500)
@@ -63,7 +65,7 @@ class ConversationService(BaseService):
         return messages, next_cursor, next_ts
 
     @classmethod
-    def view_channel(cls, team_id: str, channel_id: str, **kwargs):
+    def view_channel(cls, team_id: str, channel_id: str, **kwargs) -> tuple:
         limit = kwargs.pop("limit", None)
 
         # TODO: filter channels that the user belong to
@@ -77,7 +79,7 @@ class ConversationService(BaseService):
         return channel, channels, user_ids, messages, next_cursor, next_ts
 
     @classmethod
-    def post_message(cls, data: dict):
+    def post_message(cls, data: dict) -> Message:
         tid, uid, cid = utils.extract(data, "team_id", "user_id", "channel_id", how="get")
         ChannelService.verify_belong(tid, uid, cid)
 
@@ -85,5 +87,16 @@ class ConversationService(BaseService):
         fields = {f.name for f in Message._meta.fields}  # noqa
         data = {key: value for key, value in data.items() if key in fields}
         message = Message.objects.create(**data)
-        # cls.publish_message(message)  # TODO: message_created queue
+        cls.publish_message(message)
+
         return message
+
+    @classmethod
+    def publish_message(cls, message: Message):
+        # TODO: core queue routing_key instead of queue
+        # TODO: message_created
+        # TODO: update services.registry in other services
+        queue = "message.created"
+        message_data = MessageSerializer(message).data
+        ConversationQueue.publish(message_data, queue=queue)
+        print(f"Publish message: {message_data} to exchange: {ConversationQueue._exchange} at queue: {queue}")

@@ -22,11 +22,12 @@ iniconfig==2.0.0
 ipython==8.21.0
 jedi==0.19.1
 matplotlib-inline==0.1.6
-microslac-core==0.0.0.14
+microslac-core==0.0.0.18
 nodeenv==1.8.0
 packaging==23.2
 parso==0.8.3
 pexpect==4.9.0
+pika==1.3.2
 platformdirs==4.2.0
 pluggy==1.4.0
 pre-commit==3.6.2
