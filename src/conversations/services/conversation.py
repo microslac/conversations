@@ -93,10 +93,11 @@ class ConversationService(BaseService):
 
     @classmethod
     def publish_message(cls, message: Message):
-        # TODO: core queue routing_key instead of queue
-        # TODO: message_created
-        # TODO: update services.registry in other services
-        queue = "message.created"
-        message_data = MessageSerializer(message).data
-        ConversationQueue.publish(message_data, queue=queue)
-        print(f"Publish message: {message_data} to exchange: {ConversationQueue._exchange} at queue: {queue}")
+        member_ids = cls.get_channel(message.channel_id).members
+        payload = dict(
+            user=message.user_id,
+            users=list(member_ids),
+            channel=message.channel_id,
+            message=MessageSerializer(message).data,
+        )
+        ConversationQueue.publish(payload, queue="message.created")
