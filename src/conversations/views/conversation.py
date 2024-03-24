@@ -1,36 +1,29 @@
+from micro.jango.views import BaseViewSet, post
 from rest_framework import status
 from rest_framework.response import Response
-from core.views import BaseViewSet, post
+
 from channels.serializers import ChannelSerializer
 from conversations.serializers import (
-    ConversationInfoSerializer,
     ConversationHistorySerializer,
-    ConversationViewSerializer, )
-from messages.serializers import MessageSerializer
+    ConversationInfoSerializer,
+    ConversationViewSerializer,
+)
 from conversations.services import ConversationService
-from core.auth.permissions import IsInternal
-from core.serializers import IdSerializer
+from messages.serializers import MessageSerializer
 
 
 class ConversationViewSet(BaseViewSet):
     @post(url_path="create")
     def create_(self, request):
         data = request.data.copy()
-        data.update(team_id=request.token.team, creator_id=request.token.user)
+        team_id = request.token.team
+        creator_id = request.token.user
+        data.update(team_id=team_id, creator_id=creator_id)
         serializer = ChannelSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
-            channel = ConversationService.create_channel(data=serializer.validated_data)
+            channel = ConversationService.create_channel(team_id, creator_id, data=serializer.validated_data)
             resp = dict(channel=ChannelSerializer(channel).data)
             return Response(data=resp, status=status.HTTP_200_OK)
-
-    @post(url_path="destroy", permission_classes=(IsInternal,))
-    def destroy_(self, request):
-        data = request.data.copy()
-        serializer = IdSerializer(data=data)
-        if serializer.is_valid(raise_exception=True):
-            channel_id = serializer.validated_data.pop("id")
-            ConversationService.destroy_channel(channel_id)
-            return Response(status=status.HTTP_200_OK)
 
     @post(url_path="info")
     def info(self, request):
@@ -92,6 +85,6 @@ class ConversationViewSet(BaseViewSet):
                     has_more=bool(next_cursor),
                     next_ts=next_ts,
                 ),
-                response_metadata=dict(next_cursor=next_cursor)
+                response_metadata=dict(next_cursor=next_cursor),
             )
             return Response(resp, status.HTTP_200_OK)

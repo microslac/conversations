@@ -1,7 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 from faker import Factory
-from core.utils import utils
+from micro.utils import utils
 
 from channels.models import Channel, ChannelMember
 

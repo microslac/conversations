@@ -1,8 +1,9 @@
 import uuid
 
-from core.tests import UnitTestBase
-from tests.factories import ChannelFactory, ChannelMemberFactory
+from micro.jango.tests import UnitTestBase
+
 from messages.models import Message
+from tests.factories import ChannelFactory, ChannelMemberFactory
 
 
 class TestMessageModel(UnitTestBase):

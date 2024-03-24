@@ -1,5 +1,5 @@
+from micro.jango.serializers import BaseSerializer, TimestampField
 from rest_framework import serializers
-from core.serializers import BaseSerializer, TimestampField
 
 
 class ConversationInfoSerializer(BaseSerializer):

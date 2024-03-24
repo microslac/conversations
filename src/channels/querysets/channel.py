@@ -2,8 +2,7 @@ import re
 from typing import TYPE_CHECKING
 
 from django.db.models import QuerySet
-
-from core.models.history import DeletedQuerySet
+from micro.jango.models.history import DeletedQuerySet
 
 if TYPE_CHECKING:
     from channels.models import Channel

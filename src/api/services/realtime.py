@@ -1,20 +1,21 @@
 from __future__ import annotations
+
 import json
+
 import pika
-from typing import Type
-from core.services import BaseService
-from pika.connection import Connection
-from pika.channel import Channel
 from django.conf import settings
+from micro.jango.services import BaseService
+from pika.channel import Channel
+from pika.connection import Connection
 
 
 class ConnectionDescriptor:
     def __init__(
-            self,
-            host: str = "localhost",
-            port: int = 5672,
-            username: str = "user",
-            password: str = "password",
+        self,
+        host: str = "localhost",
+        port: int = 5672,
+        username: str = "user",
+        password: str = "password",
     ):
         self.host = host
         self.port = port
@@ -24,7 +25,7 @@ class ConnectionDescriptor:
     def __set_name__(self, owner, name):
         self.name = name
 
-    def __get__(self, instance, cls: Type[RealtimeService]):
+    def __get__(self, instance, cls: type[RealtimeService]):
         if instance is None:
             assert all([self.host, self.port, self.username, self.password])
 
@@ -39,7 +40,7 @@ class ChannelDescriptor:
     def __set_name__(self, owner, name):
         self.name = name
 
-    def __get__(self, instance, cls: Type[RealtimeService]):
+    def __get__(self, instance, cls: type[RealtimeService]):
         if instance is None:
             channel = cls._connection.channel()
             setattr(cls, self.name, channel)
@@ -57,9 +58,15 @@ class RealtimeService(BaseService):
     _exchange: str = "conversations"
 
     @classmethod
-    def publish(cls, queue: str = "message.created", data: dict = None, exchange: str = "",
-                properties: pika.BasicProperties = None, **kwargs):
+    def publish(
+        cls,
+        queue: str = "message.created",
+        data: dict = None,
+        exchange: str = "",
+        properties: pika.BasicProperties = None,
+        **kwargs,
+    ):
         data = data or {}
         body = json.dumps(data).encode("utf-8")
-        properties = properties or pika.BasicProperties(content_type="application/json", content_encoding='utf-8')
+        properties = properties or pika.BasicProperties(content_type="application/json", content_encoding="utf-8")
         cls._channel.basic_publish(exchange=exchange, routing_key=queue, body=body, properties=properties)

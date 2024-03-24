@@ -1,12 +1,13 @@
+from micro.jango.serializers import BaseModelSerializer, TimestampField
 from rest_framework import serializers
-from core.serializers import BaseModelSerializer, TimestampField
+
 from channels.models import Channel
 
 
 class ChannelSerializer(BaseModelSerializer):
-    team_id = serializers.CharField(required=True, write_only=True)
-    creator_id = serializers.CharField(required=True, write_only=True)
-    updater_id = serializers.CharField(required=False, write_only=True)
+    team = serializers.CharField(required=True, write_only=True)
+    creator = serializers.CharField(required=True, write_only=True)
+    updater = serializers.CharField(required=False, write_only=True)
     created = TimestampField(required=False, read_only=True)
     updated = TimestampField(required=False, read_only=True)
 
@@ -15,7 +16,7 @@ class ChannelSerializer(BaseModelSerializer):
         fields = (
             "id",
             "name",
-            "team_id",
+            "team",
             "is_im",
             "is_mpim",
             "is_channel",
@@ -28,8 +29,8 @@ class ChannelSerializer(BaseModelSerializer):
             "is_read_only",
             "created",
             "updated",
-            "creator_id",
-            "updater_id",
+            "creator",
+            "updater",
         )
 
     def to_representation(self, instance: Channel):

@@ -1,7 +1,7 @@
 import base64
 from contextlib import suppress
 from functools import reduce
-from typing import Union, Tuple
+from typing import Tuple, Union
 
 
 def encode_cursor(text: str, default="") -> str:
@@ -18,7 +18,7 @@ def decode_cursor(
     raise_exception: bool = True,
     parser: Union[callable, Tuple[callable]] = None,
 ) -> str:
-    from core.exceptions import ApiException
+    from micro.jango.exceptions import ApiException
 
     with suppress(Exception):
         decoded = base64.b64decode(cursor).decode("utf-8").split(delimiter)

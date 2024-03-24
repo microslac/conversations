@@ -1,4 +1,4 @@
-from core.tests import ApiTestBase
+from micro.jango.tests import ApiTestBase
 from tests.factories import ChannelFactory, ChannelMemberFactory, MessageFactory
 from channels.models import Channel
 
@@ -24,8 +24,9 @@ class ConversationTestBase(ApiTestBase):
             members.extend([m.user_id for m in ChannelMemberFactory.create_batch(num_members, channel_id=channel.id)])
         return channel, members
 
-    def setup_messages(self, channel: Channel, user_id: str = None, num_messages: int = 10,
-                       return_members: bool = False, **data):
+    def setup_messages(
+        self, channel: Channel, user_id: str = None, num_messages: int = 10, return_members: bool = False, **data
+    ):
         message_data = dict(team_id=channel.team_id, channel_id=channel.id)
         if user_id:
             message_data.update(user_id=user_id)

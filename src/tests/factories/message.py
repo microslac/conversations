@@ -1,11 +1,13 @@
 import factory
 from factory.django import DjangoModelFactory
 from faker import Factory
-from core.utils import utils
+from micro.utils import utils
 
 from messages.models import Message
 
-__all__ = ["MessageFactory", ]
+__all__ = [
+    "MessageFactory",
+]
 
 fake = Factory.create()
 

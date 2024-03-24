@@ -1,1 +1,1 @@
-from core.tests.conftest import *
+from micro.jango.tests.conftest import *  # noqa

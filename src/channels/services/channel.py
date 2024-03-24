@@ -1,8 +1,8 @@
-from core.services import BaseService
-from channels.models import Channel, ChannelMember
 from django.db.models import Subquery
+from micro.jango.exceptions import ApiException
+from micro.jango.services import BaseService
 
-from core.exceptions import ApiException
+from channels.models import Channel, ChannelMember
 
 
 class ChannelService(BaseService):
@@ -34,13 +34,15 @@ class ChannelService(BaseService):
             is_channel=is_channel,
             is_general=is_general,
             is_random=is_random,
-            **channel_data)
+            **channel_data
+        )
 
         return channel
 
     @classmethod
-    def add_member(cls, channel: Channel | str, user_id: str = None, user_ids: list[str] = None) -> (
-            ChannelMember | list[ChannelMember]):
+    def add_member(
+        cls, channel: Channel | str, user_id: str = None, user_ids: list[str] = None
+    ) -> (ChannelMember | list[ChannelMember]):
         if isinstance(channel, str):
             channel = cls.get_channel(channel)
         if user_id:

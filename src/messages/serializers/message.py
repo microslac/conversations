@@ -1,8 +1,7 @@
+from micro.jango.serializers import BaseModelSerializer, TimestampField
 from rest_framework import serializers
 
 from messages.models import Message
-
-from core.serializers import BaseModelSerializer, TimestampField
 
 
 class MessageSerializer(BaseModelSerializer):
@@ -15,8 +14,18 @@ class MessageSerializer(BaseModelSerializer):
 
     class Meta:
         model = Message
-        fields = ("team_id", "user_id", "channel_id", "text",
-                  "client_msg_id", "type", "subtype", "metadata", "ts", "updated")
+        fields = (
+            "team_id",
+            "user_id",
+            "channel_id",
+            "text",
+            "client_msg_id",
+            "type",
+            "subtype",
+            "metadata",
+            "ts",
+            "updated",
+        )
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

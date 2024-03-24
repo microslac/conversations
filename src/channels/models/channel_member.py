@@ -1,6 +1,6 @@
 from django.db import models
+from micro.jango.models.history import HistoryModel
 
-from core.models.history import HistoryModel
 from channels.models import Channel
 
 

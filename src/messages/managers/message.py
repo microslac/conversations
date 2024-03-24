@@ -1,4 +1,4 @@
-from core.models.history import DeletedManager, DeletedQuerySet
+from micro.jango.models.history import DeletedManager, DeletedQuerySet
 
 
 class MessageQuerySet(DeletedQuerySet):

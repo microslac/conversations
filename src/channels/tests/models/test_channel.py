@@ -1,4 +1,5 @@
-from core.tests import UnitTestBase
+from micro.jango.tests import UnitTestBase
+
 from channels.models import Channel
 
 

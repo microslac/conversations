@@ -1,9 +1,10 @@
 import pytest
 from django.db import IntegrityError
-from core.tests import UnitTestBase
-from tests.factories import ChannelFactory
+from micro.jango.tests import UnitTestBase
+from micro.utils import utils
+
 from channels.models import ChannelMember
-from core.utils import utils
+from tests.factories import ChannelFactory
 
 
 class TestChannelMemberModel(UnitTestBase):

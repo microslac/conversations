@@ -1,22 +1,25 @@
 from datetime import datetime
 from typing import Optional
-from core.services import BaseService
+
+from django.db import transaction
+from django.db.models import Q
+from micro.jango.services import BaseService
+from micro.utils import utils
+
 from channels.models import Channel
 from channels.services import ChannelService
+from conversations.utils import decode_cursor, encode_cursor
 from messages.models import Message
-from django.db import transaction
-from core.utils import utils
-from conversations.utils import encode_cursor, decode_cursor
-from django.db.models import Q
-from core.queues.registry import ConversationQueue
-from messages.serializers import MessageSerializer
+
+# from micro.jango.queues.registry import ConversationQueue
+# from messages.serializers import MessageSerializer
 
 
 class ConversationService(BaseService):
     @classmethod
-    def create_channel(cls, data: dict) -> Channel:
+    def create_channel(cls, team_id: str, creator_id: str, data: dict) -> Channel:
         with transaction.atomic():
-            channel = ChannelService.create_channel(**data)
+            channel = ChannelService.create_channel(team_id, creator_id, **data)
             ChannelService.add_member(channel, user_id=channel.creator_id)
         return channel
 
@@ -87,17 +90,17 @@ class ConversationService(BaseService):
         fields = {f.name for f in Message._meta.fields}  # noqa
         data = {key: value for key, value in data.items() if key in fields}
         message = Message.objects.create(**data)
-        cls.publish_message(message)
+        # cls.publish_message(message)
 
         return message
 
-    @classmethod
-    def publish_message(cls, message: Message):
-        member_ids = cls.get_channel(message.channel_id).members
-        payload = dict(
-            user=message.user_id,
-            users=list(member_ids),
-            channel=message.channel_id,
-            message=MessageSerializer(message).data,
-        )
-        ConversationQueue.publish(payload, queue="message.created")
+    # @classmethod
+    # def publish_message(cls, message: Message):
+    #     member_ids = cls.get_channel(message.channel_id).members
+    #     payload = dict(
+    #         user=message.user_id,
+    #         users=list(member_ids),
+    #         channel=message.channel_id,
+    #         message=MessageSerializer(message).data,
+    #     )
+    #     ConversationQueue.publish(payload, queue="message.created")

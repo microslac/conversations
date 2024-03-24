@@ -1,11 +1,9 @@
 from django.db import models
+from micro.jango.models import DeletedModel, HistoryModel, UUIDModel
+from micro.utils import utils
 
-from channels.models import Channel
 from messages.constants import MessageSubType, MessageType
 from messages.managers import MessageManager
-
-from core.models import DeletedModel, HistoryModel, UUIDModel
-from core.utils import utils
 
 
 class Message(UUIDModel, HistoryModel, DeletedModel):

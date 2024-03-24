@@ -1,4 +1,4 @@
-from core.queues import BaseQueue
+from micro.jango.queues import BaseQueue
 from pika.channel import Channel
 from pika.exchange_type import ExchangeType
 

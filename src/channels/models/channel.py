@@ -1,13 +1,13 @@
 from django.db import models
+from django.db.models import QuerySet
 from django.db.models.functions import Lower
 from django.db.models.manager import Manager
-from django.db.models import QuerySet
 from django.utils.functional import cached_property
+from micro.jango.models import DeletedModel, HistoryModel, UUIDModel
+from micro.jango.models.fields import ShortIdField
 
-from core.models import DeletedModel, HistoryModel, UUIDModel
-from core.models.fields import ShortIdField
-from channels.querysets import ChChannelQuerySet, ImChannelQuerySet, MpimChannelQuerySet
 from channels.managers import ChannelManager
+from channels.querysets import ChChannelQuerySet, ImChannelQuerySet, MpimChannelQuerySet
 
 
 class Channel(UUIDModel, DeletedModel, HistoryModel):
@@ -42,4 +42,5 @@ class Channel(UUIDModel, DeletedModel, HistoryModel):
     @cached_property
     def members(self) -> QuerySet:
         from channels.models import ChannelMember
+
         return ChannelMember.objects.filter(channel=self.id).values_list("user_id", flat=True)
