@@ -30,4 +30,4 @@ RUN chown -R appuser .
 USER appuser
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD gunicorn -c ./gunicorn.py -w "$NUM_WORKERS" -b "0.0.0.0:${BIND_PORT}" --chdir ./src api.wsgi:application
+CMD gunicorn -c ./gunicorn.py -w "$NUM_WORKERS" -b "0.0.0.0:${BIND_PORT}" --worker-class uvicorn.workers.UvicornWorker --chdir ./src api.asgi:application

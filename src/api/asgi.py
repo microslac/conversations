@@ -10,7 +10,13 @@ https://docs.djangoproject.com/en/5.0/howto/deployment/asgi/
 import os
 
 from django.core.asgi import get_asgi_application
+from starlette.applications import Starlette
+from starlette.routing import Mount
+from events.broker import lifespan_context
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 
-application = get_asgi_application()
+application = Starlette(
+    routes=[Mount("/", get_asgi_application())],
+    lifespan=lifespan_context
+)

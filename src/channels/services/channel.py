@@ -1,17 +1,21 @@
-from django.db.models import Subquery
+from django.db.models import Subquery, Q, QuerySet
 from micro.jango.exceptions import ApiException
 from micro.jango.services import BaseService
 
 from channels.models import Channel, ChannelMember
 
 
+class unset: pass  # noqa
+
+
 class ChannelService(BaseService):
     # TODO: cache
     @classmethod
-    def get_channel(cls, channel_id: str, default=-1) -> Channel:
-        if default != -1:
-            return Channel.objects.filter(id=channel_id).first() or default
-        return Channel.objects.get(id=channel_id)
+    def get_channel(cls, channel_id: str, default=unset, **kwargs) -> Channel:
+        query = Q(id=channel_id, **kwargs)
+        if default is not unset:
+            return Channel.objects.filter(query).first() or default
+        return Channel.objects.get(query)
 
     @classmethod
     def create_channel(cls, team_id: str, creator_id: str, **data: dict) -> Channel:
@@ -41,7 +45,7 @@ class ChannelService(BaseService):
 
     @classmethod
     def add_member(
-        cls, channel: Channel | str, user_id: str = None, user_ids: list[str] = None
+            cls, channel: Channel | str, user_id: str = None, user_ids: list[str] = None
     ) -> (ChannelMember | list[ChannelMember]):
         if isinstance(channel, str):
             channel = cls.get_channel(channel)
@@ -61,3 +65,9 @@ class ChannelService(BaseService):
         if not is_belong and raise_exception:
             raise ApiException(error="not_in_channel")
         return is_belong
+
+    @classmethod
+    def get_base_channels(cls, team_id: str) -> QuerySet[Channel]:
+        query = Q(is_general=True) | Q(is_random=True)
+        query = Q(team_id=team_id) & query
+        return Channel.objects.filter(query)

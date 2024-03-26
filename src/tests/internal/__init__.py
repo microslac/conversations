@@ -1,5 +1,5 @@
-from micro.jango.tests import ApiTestBase
+from tests.conversations import ConversationTestBase
 
 
-class InternalTestBase(ApiTestBase):
+class InternalTestBase(ConversationTestBase):
     URL = "/internal"

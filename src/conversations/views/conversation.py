@@ -44,9 +44,8 @@ class ConversationViewSet(BaseViewSet):
         data.update(team_id=tid, user_id=uid, channel_id=cid)
         serializer = MessageSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
-            message = ConversationService.post_message(data=serializer.validated_data)
-            message_data = MessageSerializer(message).data
-            resp = dict(ts=message.timestamp, channel=message.channel_id, message=message_data)
+            message = ConversationService.post_message(data=serializer.validated_data, publish=True)
+            resp = dict(ts=message.timestamp, channel=message.channel_id, message=MessageSerializer(message).data)
             return Response(data=resp, status=status.HTTP_200_OK)
 
     @post(url_path="history")
@@ -73,7 +72,7 @@ class ConversationViewSet(BaseViewSet):
         serializer = ConversationViewSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             channel_id, limit = serializer.extract("channel", "limit")
-            channel, channels, user_ids, messages, next_cursor, next_ts = ConversationService.view_channel(
+            channel, channels, user_ids, messages, next_cursor, next_ts = ConversationService.view_conversation(
                 team_id, channel_id, limit=limit
             )
             resp = dict(
