@@ -1,1 +1,1 @@
-from .channel import ChannelSerializer
+from .channel import ChannelSerializer, ImChannelSerializer, MpimChannelSerializer

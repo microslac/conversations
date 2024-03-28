@@ -14,7 +14,7 @@ class TestChannelMemberModel(UnitTestBase):
         members = [ChannelMember.objects.create(channel_id=channel.id, user_id=user_id) for user_id in user_ids]
 
         assert {channel.id} == {member.channel_id for member in members}
-        assert sorted(channel.members) == sorted(member.user_id for member in members)
+        assert sorted(channel.member_ids) == sorted(member.user_id for member in members)
 
     def test_channel_duplicated_members(self):
         channel = ChannelFactory()

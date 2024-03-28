@@ -1,12 +1,17 @@
-from micro.jango.views import BaseViewSet, post
 from rest_framework import status
 from rest_framework.response import Response
-
-from channels.serializers import ChannelSerializer
+from micro.jango.views import BaseViewSet, post
+from micro.jango.serializers import IdSerializer
+from channels.serializers import (
+    ChannelSerializer,
+    ImChannelSerializer,
+    MpimChannelSerializer,
+)
 from conversations.serializers import (
     ConversationHistorySerializer,
     ConversationInfoSerializer,
     ConversationViewSerializer,
+    ConversationOpenSerializer,
 )
 from conversations.services import ConversationService
 from messages.serializers import MessageSerializer
@@ -44,7 +49,7 @@ class ConversationViewSet(BaseViewSet):
         data.update(team_id=tid, user_id=uid, channel_id=cid)
         serializer = MessageSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
-            message = ConversationService.post_message(data=serializer.validated_data, publish=True)
+            message = ConversationService.post_message(data=serializer.validated_data)
             resp = dict(ts=message.timestamp, channel=message.channel_id, message=MessageSerializer(message).data)
             return Response(data=resp, status=status.HTTP_200_OK)
 
@@ -87,3 +92,28 @@ class ConversationViewSet(BaseViewSet):
                 response_metadata=dict(next_cursor=next_cursor),
             )
             return Response(resp, status.HTTP_200_OK)
+
+    @post(url_path="open")
+    def open(self, request):
+        data = request.data.copy()
+        data.update(team=request.token.team, user=request.token.user)
+        serializer = ConversationOpenSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            team_id, user_id = serializer.extract("team", "user")
+            channel_id, user_ids, return_im = serializer.extract("channel", "users", "return_im", how="get")
+            channel, created = ConversationService.open_channel(
+                team_id, user_id, channel_id, user_ids=user_ids, data=serializer.validated_data
+            )
+
+            if return_im is False:
+                resp = dict(channel=IdSerializer(channel).data, already_open=not created)
+                return Response(resp, status=status.HTTP_200_OK)
+
+            if channel.is_im:
+                channel_data = ImChannelSerializer(channel, context=dict(exclude_id=user_id)).data
+            elif channel.is_mpim:
+                channel_data = MpimChannelSerializer(channel).data
+            else:
+                channel_data = ChannelSerializer(channel).data
+            resp = dict(channel=channel_data, already_open=not created)
+            return Response(resp, status=status.HTTP_200_OK)

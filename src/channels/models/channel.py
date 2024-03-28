@@ -40,7 +40,16 @@ class Channel(UUIDModel, DeletedModel, HistoryModel):
         ordering = ["-created"]
 
     @cached_property
-    def members(self) -> QuerySet:
+    def member_ids(self) -> QuerySet:
         from channels.models import ChannelMember
 
         return ChannelMember.objects.filter(channel=self.id).values_list("user_id", flat=True)
+
+    def add_members(self, user_id: str | None = None, user_ids: list[str] | None = None):
+        from channels.models import ChannelMember
+        if user_id:
+            member = ChannelMember.objects.create(channel_id=self.id, user_id=user_id)
+            return member
+        if user_ids:
+            members = [ChannelMember(channel_id=self.id, user_id=user_id) for user_id in user_ids]
+            return ChannelMember.objects.bulk_create(members)

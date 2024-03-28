@@ -1,16 +1,19 @@
+from contextlib import suppress
 from datetime import datetime
 from typing import Optional
 
 from django.db import transaction
 from django.db.models import Q
 from micro.jango.services import BaseService
-from micro.events.registry import CommunicationEvents
 from micro.utils import utils
+from micro.jango.exceptions import ApiException
 
 from channels.models import Channel, ChannelMember
 from channels.services import ChannelService
-from conversations.utils import decode_cursor, encode_cursor
+from conversations.utils import decode_cursor, encode_cursor, enquote
+from conversations.services.publishers import communication
 from messages.models import Message
+from messages.constants import MessageType, MessageSubType
 
 from messages.serializers import MessageSerializer
 
@@ -26,8 +29,13 @@ class ConversationService(BaseService):
     @classmethod
     def destroy_channel(cls, channel_id: str) -> str:
         channel = Channel.objects.get(id=channel_id)
+        messages = Message.objects.filter(channel_id=channel.id)
+        members = ChannelMember.objects.filter(channel_id=channel.id)
         channel.destroy()
-        return channel_id
+        messages.destroy()
+        members.delete()
+
+        return channel.id
 
     @classmethod
     def get_channel(cls, channel_id: str, team_id: str = None, **kwargs) -> Optional[Channel]:
@@ -82,7 +90,7 @@ class ConversationService(BaseService):
         return channel, channels, user_ids, messages, next_cursor, next_ts
 
     @classmethod
-    def post_message(cls, data: dict, publish: bool = False) -> Message:
+    def post_message(cls, data: dict, publish: bool = True) -> Message:
         tid, uid, cid = utils.extract(data, "team_id", "user_id", "channel_id", how="get")
         ChannelService.verify_belong(tid, uid, cid)
 
@@ -97,17 +105,17 @@ class ConversationService(BaseService):
 
     @classmethod
     def publish_message(cls, message: Message):
-        member_ids = cls.get_channel(message.channel_id).members
+        member_ids = cls.get_channel(message.channel_id).member_ids
         payload = dict(
             user=message.user_id,
-            users=list(member_ids),
+            members=list(member_ids),
             channel=message.channel_id,
             message=MessageSerializer(message).data,
         )
-        CommunicationEvents.publish(payload, routing_key="message")
+        communication.publish(payload, routing_key="message")
 
     @classmethod
-    def join_conversation(cls, data: dict, publish: bool = False) -> tuple[Channel, ChannelMember]:
+    def join_conversation(cls, data: dict, publish: bool = True) -> tuple[Channel, ChannelMember]:
         team_id = data.pop("team")
         user_id = data.pop("user")
         channel_id = data.pop("channel", "")
@@ -124,15 +132,39 @@ class ConversationService(BaseService):
         query = query & Q(team_id=team_id)
         channel = Channel.objects.filter(query).first()
         member = ChannelService.add_member(channel, user_id)
+        joined_message = cls.create_joined_message(channel.team_id, channel.id, user_id)
         if publish:
-            cls.publish_join_conversation(channel.id, user_id)
+            cls.publish_joined_conversation(channel.id, user_id)
+            cls.publish_message(joined_message)
 
         return channel, member
 
     @classmethod
-    def publish_join_conversation(cls, channel_id: str, user_id: str):
+    def create_joined_message(cls, team_id: str, channel_id: str, user_id: str) -> Message:
+        text = f"{enquote(user_id)} has joined the channel"
+        message = Message.objects.create(
+            text=text,
+            team_id=team_id,
+            user_id=user_id,
+            channel_id=channel_id,
+            type=MessageType.MESSAGE,
+            subtype=MessageSubType.CHANNEL_JOINED,
+        )
+        return message
+
+    @classmethod
+    def publish_joined_conversation(cls, channel_id: str, user_id: str):
         payload = dict(channel=channel_id, user=user_id)
-        CommunicationEvents.publish(payload, routing_key="channel.member.joined")
+        communication.publish(payload, routing_key="channel.member.joined")
+
+    @classmethod
+    def kick_conversation(cls, data: dict, publish=True):
+        team_id = data.pop("team")
+        user_id = data.pop("user")
+        channel_id = data.pop("channel", "")
+        channel = ChannelService.get_channel(channel_id, team_id=team_id)
+        result = ChannelService.remove_member(channel, user_id=user_id)
+        return channel, result
 
     @classmethod
     def list_members(cls, channel_id: str, **kwargs):
@@ -142,5 +174,58 @@ class ConversationService(BaseService):
         channel = ChannelService.get_channel(channel_id)
 
         if all_members:
-            return channel.members
-        return channel.members, f"{limit}:{cursor}"
+            return channel.member_ids
+        return channel.member_ids, f"{limit}:{cursor}"
+
+    @classmethod
+    def open_channel(
+            cls, team_id: str, creator_id: str, channel_id: str = None, user_ids: list = None, data: dict = None
+    ) -> tuple[Channel, bool]:
+        if channel_id:
+            channel = cls.get_channel(channel_id, team_id=team_id)
+            if not channel:
+                raise ApiException(error="channel_not_found")
+            return channel, False
+
+        if not user_ids:
+            raise ApiException("user_not_supplied")
+        elif len(user_ids) > 1:
+            return cls.open_mpim_channel(team_id, creator_id, user_ids=user_ids, data=data)
+        else:
+            return cls.open_im_channel(team_id, creator_id, user_ids.pop(), data=data)
+
+    @classmethod
+    def open_mpim_channel(
+            cls, team_id: str, creator_id: str, *, user_ids: list[str], data: dict = None
+    ) -> tuple[Channel, bool]:
+        user_ids = set(sorted(user_ids))
+
+        if len(user_ids) > 8:
+            raise ApiException("too_many_users")
+        elif len(user_ids) <= 2:
+            raise ApiException(error="not_enough_users")
+        # elif TODO: lookup
+        # raise ApiException(error="user_not_found", users=list(null_ids))
+
+        with transaction.atomic():
+            joined_names = "--".join([user_id for user_id in user_ids])
+            mpim_channel, created = Channel.mpims.get_or_create(
+                team_id=team_id,
+                name=f"mpim-{joined_names}",
+                creator_id=creator_id,
+            )
+            if created:
+                mpim_channel.add_members(user_ids=[*user_ids, creator_id])
+            return mpim_channel, created
+
+    @classmethod
+    def open_im_channel(cls, team_id: str, creator_id: str, other_id: str, data: dict = None) -> tuple[Channel, bool]:
+        with transaction.atomic():
+            user_ids = list(sorted([creator_id, other_id]))
+            joined_names = "--".join([user_id for user_id in user_ids])
+            im_channel, created = Channel.ims.get_or_create(team_id=team_id, name=f"im-{joined_names}")
+            if created:
+                im_channel.creator_id = creator_id
+                im_channel.add_members(user_ids=user_ids)
+                im_channel.save(update_fields=["creator_id"])
+            return im_channel, created

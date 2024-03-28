@@ -1,3 +1,4 @@
+import re
 import base64
 from contextlib import suppress
 from functools import reduce
@@ -31,3 +32,15 @@ def decode_cursor(
     if raise_exception:
         raise ApiException(error="invalid_cursor")
     return default
+
+
+def enquote(identifier: str) -> str:
+    return f"<@{identifier}>"
+
+
+def dequote(text: str) -> str:
+    patt = re.compile("<@(.+)>")
+    found = patt.search(text)
+    if found:
+        return found.group(1)
+    return ""

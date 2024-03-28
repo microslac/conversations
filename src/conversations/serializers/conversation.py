@@ -37,6 +37,33 @@ class ConversationJoinSerializer(BaseSerializer):
         return data
 
 
+class ConversationDestroySerializer(BaseSerializer):
+    channel = serializers.CharField(required=True, allow_blank=False)
+
+
+class ConversationKickSerializer(BaseSerializer):
+    team = serializers.CharField(required=True, allow_blank=False)
+    user = serializers.CharField(required=True, allow_blank=False)
+    channel = serializers.CharField(required=True, allow_blank=False)
+
+
 class ConversationMembersSerializer(BaseSerializer):
     channel = serializers.CharField(required=True, allow_blank=False)
     all_members = serializers.BooleanField(required=False, default=False)
+
+
+class ConversationOpenSerializer(BaseSerializer):
+    team = serializers.CharField(required=True, allow_blank=False)
+    user = serializers.CharField(required=True, allow_blank=False)
+    channel = serializers.CharField(required=False, allow_blank=True)
+    return_im = serializers.BooleanField(required=False, default=False)
+    users = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+    prevent_creation = serializers.BooleanField(required=False, default=False)
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        channel = data.get("channel")
+        users = data.get("users")
+        if not channel and not users:
+            raise ApiException("not_enough_users")
+        return data

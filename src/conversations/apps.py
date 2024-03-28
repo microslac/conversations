@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 from django.conf import settings
-from micro.events.registry import CommunicationEvents
+from micro.events.publishers import communication
 
 
 class ConversationsConfig(AppConfig):
@@ -9,4 +9,4 @@ class ConversationsConfig(AppConfig):
 
     def ready(self):
         if settings.RABBITMQ_ENABLED:
-            CommunicationEvents.declare_exchange()
+            communication.declare_exchange()

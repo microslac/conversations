@@ -11,10 +11,12 @@ class Message(UUIDModel, HistoryModel, DeletedModel):
     team_id = models.CharField(blank=False, max_length=20)
     user_id = models.CharField(blank=False, max_length=20)
     channel_id = models.CharField(blank=False, max_length=20)
-    type = models.CharField(max_length=40, choices=MessageType.choices, default=MessageType.MESSAGE)
-    subtype = models.CharField(max_length=40, choices=MessageSubType.choices, default=MessageSubType.EMPTY)
     text = models.TextField(default="", max_length=40000)
     metadata = models.JSONField(default=dict)
+    type = models.CharField(max_length=40, choices=MessageType.choices, default=MessageType.MESSAGE, null=False,
+                            db_index=True)
+    subtype = models.CharField(max_length=40, choices=MessageSubType.choices, default=MessageSubType.EMPTY,
+                               db_index=True)
 
     created = None
     ts = models.DateTimeField(auto_now_add=True, db_index=True)

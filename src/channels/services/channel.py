@@ -5,16 +5,13 @@ from micro.jango.services import BaseService
 from channels.models import Channel, ChannelMember
 
 
-class unset: pass  # noqa
-
-
 class ChannelService(BaseService):
     # TODO: cache
     @classmethod
-    def get_channel(cls, channel_id: str, default=unset, **kwargs) -> Channel:
+    def get_channel(cls, channel_id: str, nullable: bool = False, **kwargs) -> Channel:
         query = Q(id=channel_id, **kwargs)
-        if default is not unset:
-            return Channel.objects.filter(query).first() or default
+        if nullable:
+            return Channel.objects.filter(query).first()
         return Channel.objects.get(query)
 
     @classmethod
@@ -54,8 +51,17 @@ class ChannelService(BaseService):
             return member
         if user_ids:
             members = [ChannelMember(channel_id=channel.id, user_id=user_id) for user_id in user_ids]
-            return ChannelMember.objecs.bulk_create(members)
+            return ChannelMember.objects.bulk_create(members)
         raise Exception()
+
+    @classmethod
+    def remove_member(cls, channel: Channel | str, user_id: str = None, user_ids: list[str] = None):
+        if isinstance(channel, str):
+            channel = cls.get_channel(channel)
+
+        user_ids = user_ids or [user_id]
+        members: QuerySet[ChannelMember] = ChannelMember.objects.filter(channel_id=channel.id, user_id__in=user_ids)
+        return members.delete()
 
     @classmethod
     def verify_belong(cls, team_id: str, user_id: str, channel_id, raise_exception: bool = True):

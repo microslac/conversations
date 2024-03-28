@@ -5,7 +5,12 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from channels.serializers import ChannelSerializer
-from conversations.serializers.conversation import ConversationJoinSerializer, ConversationMembersSerializer
+from conversations.serializers.conversation import (
+    ConversationDestroySerializer,
+    ConversationJoinSerializer,
+    ConversationMembersSerializer,
+    ConversationKickSerializer,
+)
 from conversations.services import ConversationService
 
 
@@ -26,9 +31,9 @@ class InternalViewSet(BaseViewSet):
     @post(url_path="destroy")
     def destroy_(self, request):
         data = request.data.copy()
-        serializer = IdSerializer(data=data)
+        serializer = ConversationDestroySerializer(data=data)
         if serializer.is_valid(raise_exception=True):
-            channel_id = serializer.validated_data.pop("id")
+            channel_id = serializer.validated_data.pop("channel")
             ConversationService.destroy_channel(channel_id)
             return Response(status=status.HTTP_200_OK)
 
@@ -37,8 +42,17 @@ class InternalViewSet(BaseViewSet):
         data = request.data.copy()
         serializer = ConversationJoinSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
-            channel, _ = ConversationService.join_conversation(serializer.validated_data)
+            channel, _ = ConversationService.join_conversation(serializer.validated_data, publish=False)
             resp = dict(channel=ChannelSerializer(channel).data)
+            return Response(resp, status=status.HTTP_200_OK)
+
+    @post(url_path="kick")
+    def kick(self, request):
+        data = request.data.copy()
+        serializer = ConversationKickSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            channel, _ = ConversationService.kick_conversation(serializer.validated_data, publish=False)
+            resp = dict(channel=IdSerializer(channel).data)
             return Response(resp, status=status.HTTP_200_OK)
 
     @post(url_path="members")

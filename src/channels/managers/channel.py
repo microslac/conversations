@@ -1,3 +1,4 @@
+from django.db.models.manager import BaseManager
 from micro.jango.models.history import DeletedManager
 
 from channels.querysets.channel import ChannelQuerySet
