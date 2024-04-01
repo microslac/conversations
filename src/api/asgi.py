@@ -13,7 +13,7 @@ from django.core.asgi import get_asgi_application
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-from conversations.broker import lifespan_context
+from api.lifespan import lifespan_context
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "api.settings")
 

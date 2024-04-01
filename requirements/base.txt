@@ -30,7 +30,7 @@ iniconfig==2.0.0
 ipython==8.21.0
 jedi==0.19.1
 matplotlib-inline==0.1.6
-microslac==0.0.17
+microslac==0.0.20
 microslac-core==0.0.0.18
 multidict==6.0.5
 nodeenv==1.8.0
