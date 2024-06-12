@@ -71,15 +71,17 @@ class ConversationViewSet(BaseViewSet):
     def view(self, request):
         data = request.data.copy()
         team_id = request.token.team
+        user_id = request.token.user
         serializer = ConversationViewSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
+            context = dict(exclude_id=user_id)
             channel_id, limit = serializer.extract("channel", "limit")
             channel, channels, user_ids, messages, next_cursor, next_ts = ConversationService.view_conversation(
                 team_id, channel_id, limit=limit
             )
             resp = dict(
-                channel=ChannelSerializer(channel).data,
-                channels=ChannelSerializer(channels, many=True).data,
+                channel=ChannelSerializer(channel, context=context).data,
+                channels=ChannelSerializer(channels, context=context, many=True).data,
                 user_ids=user_ids,
                 history=dict(
                     messages=MessageSerializer(messages, many=True).data,
